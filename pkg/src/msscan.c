@@ -303,8 +303,3 @@ SEXP RemoveOverlap(SEXP p_leftpts, SEXP p_rightpts)
 
 	return( ret_int );
 }
-
-
-
-
-
