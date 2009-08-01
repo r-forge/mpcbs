@@ -1,90 +1,63 @@
 \name{merge.pos}
 \alias{merge.pos}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{ ~~function to do ... ~~ }
+\title{Merge the Probe Positions from Multiple Microarray Platforms.}
 \description{
-  ~~ A concise (1-5 lines) description of what the function does. ~~
+  Merges the probe positions across platforms, and gives a set of anchor points at which to test for change-points.  
+  In other words, the anchor points are locations where the scan statistic for MPCBS is evaluated.  
 }
 \usage{
-merge.pos(pos, anchors = NULL)
+    merge.pos(pos, anchors = NULL)
+    merge.pos(pos, anchors=1)
+    
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{pos}{ ~~Describe \code{pos} here~~ }
-  \item{anchors}{ ~~Describe \code{anchors} here~~ }
+  \item{pos}{A vector of sorted integer arrays, one array for each platform.  pos[[k]] should give the positions, in increasing order, of the probes of the k-th platform.}
+  \item{anchors}{A list of integers specifying which platform(s) to use as anchor.  If this is null, then the anchor is the union of the probe locations from all platforms. }
 }
 \details{
-  ~~ If necessary, more details than the description above ~~
+  It is necessary to call this function to obtain an anchor set before using any of the other functions in the mpcbs package.  In the scan max Z(s,t), the anchor points are the set of possibilities for (s,t).  Note that ALL probes from ALL platforms are used in computing Z(s,t), regardless of the set of anchor points used.  
+  Smaller anchor set means less computing time. The default is to set the anchor to be the union of all probes on all platforms.    
 }
 \value{
   ~Describe the value returned
   If it is a LIST, use
-  \item{comp1 }{Description of 'comp1'}
-  \item{comp2 }{Description of 'comp2'}
-  ...
+  \item{merged.pos }{An increasing integer array containing the set of merged probe positions.}
+  \item{imap }{Let N be the length of merged.pos, and K be the number of platforms.  This is an N by K matrix with imap(i,j) being the
+  index of the first probe in the k-th platform that is strictly to the right of merged.pos[k], i.e. the index within pos[[k]] of the first value that is strictly larger than merged.pos[i].   }
 }
-\references{ ~put references to the literature/web site here ~ }
-\author{ ~~who you are~~ }
-\note{ ~~further notes~~ 
-
- ~Make other sections like Warning with \section{Warning }{....} ~
-}
-\seealso{ ~~objects to See Also as \code{\link{help}}, ~~~ }
+\references{ Zhang, NR, Senbabaoglu, Y. and Li, J.Z. (2009) Joint Estimation of DNA Copy Number from Multiple Platforms.  Under review, download manuscript from
+http://www-stat.stanford.edu/~nzhang/web_multiplatform/ }
+\author{Nancy R. Zhang}
+\seealso{ mpcbs, mpcbs.mbic, plot.crossplatform }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
 
-## The function is currently defined as
-function(pos,anchors=NULL){
-    M = length(pos)
-    pos.len = rep(0,M)
-    for(i in 1:M) pos.len[i] = length(pos[[i]])
-    
-    if (is.null(anchors)) anchors=1:M
-    
-    nanchors = length(anchors)
-    not.anchors = setdiff(c(1:M),anchors)
-    
-    totalinds = 0
-    for(i in 1:nanchors){
-        totalinds =totalinds + length(pos[[anchors[i]]]) 
-    }
-    
-    merged.pos = rep(0,totalinds)
-    index.map = matrix(0,nrow=totalinds,ncol=M)
-    
-    counter = rep(1,M) # counter[i] keeps track of where current merged.inds is in each of pos[i].
-    next.pos = rep(0,nanchors)
-    for(i in 1:nanchors) next.pos[i] = pos[[anchors[i]]][counter[anchors[i]]]
-    
-    for(k in 1:totalinds){
-        min.pos = which.min(next.pos)
-        merged.pos[k] = next.pos[min.pos]
-        next.pos[min.pos] = pos[[anchors[min.pos]]][counter[anchors[min.pos]]+1]
-        counter[anchors[min.pos]] = counter[anchors[min.pos]]+1
-        for(j in not.anchors){
-            while(TRUE) {
-                if(counter[j] > pos.len[j]) break
-                if(pos[[j]][counter[j]]>merged.pos[k]) break
-                counter[j] = counter[j] + 1
-            }
-        }
-        
-        index.map[k,] = counter
-    }
+data(mpcbsexample)
 
-    # merged.pos is union of pos[[anchors]].
-    # imap[k,i] = min_j { pos[[i]][j] > merged.pos[k] }   (note it is STRICTLY larger than)  
-    # Thus to get the index of the largest value in pos[[i]] 
-    # that is smaller than or equal to merged.pos[k], use imap[i,k]-1.
-    # By this notation, imap[totalinds,] = pos.len + 1.
+# there are 3 platforms represented in this data example: Illumina, Affymetrix, and Agilent.
+names(mpcbs.example)
 
-    list(merged.pos = merged.pos, imap = index.map)
+# K is the number of platforms.
+K=3
 
-  }
+# Store the chromosome positions in vector pos,
+# the intensities in vector y:
+
+pos=vector("list",K)
+pos[[1]] = mpcbs.example$illu[,1]
+pos[[2]] = mpcbs.example$affy[,1]
+pos[[3]] = mpcbs.example$agil[,1]
+
+y = vector("list",K)
+y[[1]] = mpcbs.example$illu[,2]
+y[[2]] = mpcbs.example$affy[,2]
+y[[3]] = mpcbs.example$agil[,2]
+
+# Names of the platforms:
+platform.names=c("Illumina","Affymetrix","Agilent")
+
+anchor = merge.pos(pos)
+
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+

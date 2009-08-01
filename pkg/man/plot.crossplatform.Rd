@@ -1,79 +1,86 @@
 \name{plot.crossplatform}
 \alias{plot.crossplatform}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{ ~~function to do ... ~~ }
+
+\title{Simultaneously plots DNA copy number data from multiple platforms. }
 \description{
-  ~~ A concise (1-5 lines) description of what the function does. ~~
+  This function plots DNA copy number data from multiple platforms in vertically aligned panels.  It aligns the position of probes across plots for easy comparison.  It can also
+  show the positions of breakpoints in a joint segmentation.
 }
 \usage{
 plot.crossplatform(pos, y, anchor, chpts = NULL, ranking = NULL, yhat = NULL, platform.names, num.panels = NA, xlim = NULL, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{pos}{ ~~Describe \code{pos} here~~ }
-  \item{y}{ ~~Describe \code{y} here~~ }
-  \item{anchor}{ ~~Describe \code{anchor} here~~ }
-  \item{chpts}{ ~~Describe \code{chpts} here~~ }
-  \item{ranking}{ ~~Describe \code{ranking} here~~ }
-  \item{yhat}{ ~~Describe \code{yhat} here~~ }
-  \item{platform.names}{ ~~Describe \code{platform.names} here~~ }
-  \item{num.panels}{ ~~Describe \code{num.panels} here~~ }
-  \item{xlim}{ ~~Describe \code{xlim} here~~ }
-  \item{\dots}{ ~~Describe \code{\dots} here~~ }
+  \item{pos}{A vector of sorted integer arrays, one array for each platform.  pos[[k]] should give the positions, in increasing order, of the probes of the k-th platform.}
+  \item{y}{A vector of intensity levels for each platform.  y[[k]] should be the intensity levels corresponding to pos[[k]] for platform k.}
+  \item{anchor}{The anchor set, returned by a call to merge.pos(...)}
+  \item{chpts}{(optional) A set of positions of change-points, given in reference to the anchor set. }
+  \item{ranking}{(optional) A set of integers showing the ranking of the change-points.}
+  \item{yhat}{(optional)  A vector of estimated intensity levels, with yhat[[k]] being the fitted values for y[[k]].}
+  \item{platform.names}{(optional) A list of platform names. }
+  \item{num.panels}{(optional) The number of vertical planels to divide the plotting area (default=length(pos)).}
+  \item{xlim}{ The limits of the x-axis in all of the plots. }
+  \item{\dots}{ Other plotting arguments. }
 }
-\details{
-  ~~ If necessary, more details than the description above ~~
-}
-\value{
-  ~Describe the value returned
-  If it is a LIST, use
-  \item{comp1 }{Description of 'comp1'}
-  \item{comp2 }{Description of 'comp2'}
-  ...
-}
-\references{ ~put references to the literature/web site here ~ }
-\author{ ~~who you are~~ }
-\note{ ~~further notes~~ 
 
- ~Make other sections like Warning with \section{Warning }{....} ~
-}
-\seealso{ ~~objects to See Also as \code{\link{help}}, ~~~ }
+
+\references{ Zhang, NR, Senbabaoglu, Y. and Li, J.Z. (2009) Joint Estimation of DNA Copy Number from Multiple Platforms.  Under review, download manuscript from
+http://www-stat.stanford.edu/~nzhang/web_multiplatform/ }
+\author{Nancy R. Zhang}
+\seealso{ mpcbs, mpcbs.mbic, merge.pos }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
 
-## The function is currently defined as
-function(pos,y,anchor,chpts=NULL,ranking=NULL,yhat=NULL,platform.names,num.panels=NA, xlim=NULL,...){
-    K = length(y)
-    
-    if(is.na(num.panels)) num.panels=K
-    
-    par(mfrow=c(num.panels,1))
-    if(is.null(xlim)){
-        xlim=0
-        
-        xlim=c(min(anchor$merged.pos),xmax=max(anchor$merged.pos))
-    } 
-        
-    for(k in 1:K){
-        ymax = max(y[[k]]) + 0.2* max(y[[k]])
-        ymin = min(y[[k]]) - 0.2*abs(min(y[[k]]))
-    
-        plot(pos[[k]],y[[k]], xlim=xlim,ylim=c(ymin,ymax),main=platform.names[[k]],ylab="",xlab="base position", ...)
-        if(!is.null(yhat)) lines(pos[[k]],yhat[[k]], col="red",lwd=2)
-        if(length(chpts)>0) {
-            segments(anchor$merged.pos[chpts],rep(ymin,length(chpts)),anchor$merged.pos[chpts],rep(ymax,length(chpts)),col="black",lwd=1)
-            
-            if(!is.null(ranking)){
-                labels = format(ranking)
-                text(anchor$merged.pos[chpts], rep(max(y[[k]]),length(chpts)), labels,adj = c(0,-1))
-            }
-        }
-    }    
-  }
+data(mpcbs.example)
+
+# there are 3 platforms represented in this data example: Illumina, Affymetrix, and Agilent.
+names(mpcbs.example)
+
+# K is the number of platforms.
+K=3
+
+# Store the chromosome positions in vector pos,
+# the intensities in vector y:
+
+pos=vector("list",K)
+pos[[1]] = mpcbs.example$illu[,1]
+pos[[2]] = mpcbs.example$affy[,1]
+pos[[3]] = mpcbs.example$agil[,1]
+
+y = vector("list",K)
+y[[1]] = mpcbs.example$illu[,2]
+y[[2]] = mpcbs.example$affy[,2]
+y[[3]] = mpcbs.example$agil[,2]
+
+# Names of the platforms:
+platform.names=c("Illumina","Affymetrix","Agilent")
+
+# Get the anchor set.
+anchor = merge.pos(pos)
+
+# Plot the data
+
+plot.crossplatform(pos,y,anchor=anchor,platform.names=platform.names, col="darkgray")
+
+seg<-mpcbs.mbic(y,pos,anchor, MAX.CHPTS=50, platform.names=platform.names,plots=TRUE)
+  
+# Give it yhat:
+
+plot.crossplatform(pos,y, yhat=seg$yhat, anchor=anchor, platform.names=platform.names, col="darkgray")
+
+# Give it chpts, and it will show breaks:
+
+plot.crossplatform(pos,y, yhat=seg$yhat, chpts=seg$chpts, anchor=anchor, platform.names=platform.names, col="darkgray")
+
+# Very useful:  you can zoom in on the plots using parameter "xlim":
+
+plot.crossplatform(pos,y, yhat=seg$yhat, chpts=seg$chpts, anchor=anchor, platform.names=platform.names, col="darkgray", xlim=c(5e7,1e8))
+
+# Try zooming in further:
+
+plot.crossplatform(pos,y, yhat=seg$yhat, chpts=seg$chpts, anchor=anchor, platform.names=platform.names, col="darkgray", xlim=c(5e7,6e7))
+
+
+
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+
+

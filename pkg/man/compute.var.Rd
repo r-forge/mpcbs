@@ -1,69 +1,27 @@
 \name{compute.var}
 \alias{compute.var}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{ ~~function to do ... ~~ }
+\title{Computes the variance of a piecewise constant time series that may contain jumps. }
 \description{
-  ~~ A concise (1-5 lines) description of what the function does. ~~
+Computes the variance of a piecewise constant time series that may contain jumps by using one-half the variance of the
+lag-1 differences.  
 }
 \usage{
-compute.var(y, use.mean = TRUE)
+compute.var(y)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{y}{ ~~Describe \code{y} here~~ }
-  \item{use.mean}{ ~~Describe \code{use.mean} here~~ }
+  \item{y}{ A matrix of real numbers, each column is a piece-wise constant time series. }
+  \item{use.mean}{If TRUE (default) the mean of the lag-1 variances is used, otherwise use the median. }
 }
-\details{
-  ~~ If necessary, more details than the description above ~~
-}
+
 \value{
-  ~Describe the value returned
-  If it is a LIST, use
-  \item{comp1 }{Description of 'comp1'}
-  \item{comp2 }{Description of 'comp2'}
-  ...
+    a vector of variances, one for each column.
 }
-\references{ ~put references to the literature/web site here ~ }
-\author{ ~~who you are~~ }
-\note{ ~~further notes~~ 
-
- ~Make other sections like Warning with \section{Warning }{....} ~
-}
-\seealso{ ~~objects to See Also as \code{\link{help}}, ~~~ }
+\author{Nancy R. Zhang}
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
-
-## The function is currently defined as
-function(y, use.mean=TRUE){
-
-    if(is.null(dim(y))){
-         y = as.matrix(y,nrow=length(y),ncol=1)
-    }
-
-    N=dim(y)[2]
-    T=dim(y)[1]
-    y.diff<-y[1:(T-1),] - y[2:T,]
-    
-    if(!use.mean){
-        if(N>1){
-            y.var <- apply(y.diff^2,2,median)
-        } else {
-            y.var = median(y.diff^2)
-        }
-    } else {
-        if(N>1){
-            y.var <- apply(y.diff^2,2,mean)/2
-        } else {
-            y.var = mean(y.diff^2)/2
-        }
-    }
-    
-    y.var
-  }
+    a=c(rnorm(100), rnorm(100,1,1), rnorm(100,2,1))
+    plot(a)
+    compute.var(a)
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+

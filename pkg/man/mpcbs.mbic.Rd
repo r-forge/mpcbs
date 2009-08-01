@@ -1,311 +1,91 @@
 \name{mpcbs.mbic}
 \alias{mpcbs.mbic}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{ ~~function to do ... ~~ }
+\title{Multi-platform circular binary segmentation with model selection using modified BIC. }
 \description{
-  ~~ A concise (1-5 lines) description of what the function does. ~~
+    This function performs multi-platform circular binary segmentation for detecting DNA copy number changes.  It determines the number of change-points in the segmentation using the modified BIC criterion.
 }
 \usage{
-mpcbs.mbic(y, pos, anchor, MIN.SNPs = 2, MIN.BP.LEN = 1000, rratio = NULL, f = NULL, MAX.CHPTS = 30, platform.names = NULL, plots = TRUE, plotspdf = NULL, use.filtered.scan = TRUE)
+mpcbs.mbic(y, pos, anchor, MIN.SNPs = 2, MAX.CHPTS = 30, platform.names, plots = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{y}{ ~~Describe \code{y} here~~ }
-  \item{pos}{ ~~Describe \code{pos} here~~ }
-  \item{anchor}{ ~~Describe \code{anchor} here~~ }
-  \item{MIN.SNPs}{ ~~Describe \code{MIN.SNPs} here~~ }
-  \item{MIN.BP.LEN}{ ~~Describe \code{MIN.BP.LEN} here~~ }
-  \item{rratio}{ ~~Describe \code{rratio} here~~ }
-  \item{f}{ ~~Describe \code{f} here~~ }
-  \item{MAX.CHPTS}{ ~~Describe \code{MAX.CHPTS} here~~ }
-  \item{platform.names}{ ~~Describe \code{platform.names} here~~ }
-  \item{plots}{ ~~Describe \code{plots} here~~ }
-  \item{plotspdf}{ ~~Describe \code{plotspdf} here~~ }
-  \item{use.filtered.scan}{ ~~Describe \code{use.filtered.scan} here~~ }
+  \item{y}{A vector of intensity levels for each platform.  y[[k]] should be the intensity levels corresponding to pos[[k]] for platform k.}
+ \item{pos}{A vector of sorted integer arrays, one array for each platform.  pos[[k]] should give the positions, in increasing order, of the probes of the k-th platform.}
+  \item{anchor}{The anchor set, returned by a call to merge.pos(...)}
+  \item{MIN.SNPs}{The minimum number of SNPs for each platform in a segment. }
+  \item{MIN.BP.LEN}{The minimum base pair length of a segment. }
+  \item{rratio}{ An array containing the signal response ratio of each platform.  }
+  \item{MAX.CHPTS}{ The maximum number of change-points to try. }
+  \item{platform.names}{ The names of the platforms. }
+  \item{plots}{ A logical indicating whether to make progress plots. }
+  \item{plotspdf}{ An optional pdf file where the progress plots will be recorded. }
+  \item{use.filtered.scan}{ A logical indicating whether to use the faster filtered scan statistic (highly recommended). }
 }
 \details{
-  ~~ If necessary, more details than the description above ~~
+  MIN.SNPs is the minimum number of snps that a platform needs to have in a window to contribute to the combined scan statistic.  If the platform does not have enough SNPs, it will simply contribute 0 to the overall statistic, but if there is enough evidence from the other platforms, that window may still be called.
+  
+  MIN.BP.LEN is the minimum base pair length of any call. 
+  
+  The modified BIC for all segments containing 1 to MAX.CHPTS change-points will be computed.  The returned segmentation is the one that maximizes the modified BIC.
+    
+  If the rratio is not specified, it is assumed to be 1 for all platforms. 
+  
+  If use.filtered.scan is TRUE, the scan will roughly take O[nlog(n)] time.  If this is false, the scan will take O[n^2] time.
 }
 \value{
-  ~Describe the value returned
-  If it is a LIST, use
-  \item{comp1 }{Description of 'comp1'}
-  \item{comp2 }{Description of 'comp2'}
+  \item{yhat}{A vector of fitted y values, yhat[[k]] contains the fitted values to y[[k]].}
+  \item{chpts}{A list of change-points, there are shared across platforms.}
+  \item{segmat}{A two-column array containing the start and end points of each segment.}
+  \item{chpt.hist}{A vector, where chpt.hist[[k]] is the best segmentation for the k-th split, the next split to be made, and its Z-score.  }
+  \item{mbic}{The modified BIC computed for the best segmentation containing 1 to MAX.CHPTS changepoints.}
   ...
 }
-\references{ ~put references to the literature/web site here ~ }
-\author{ ~~who you are~~ }
-\note{ ~~further notes~~ 
+\references{ Zhang, NR, Senbabaoglu, Y. and Li, J.Z. (2009) Joint Estimation of DNA Copy Number from Multiple Platforms.  Under review, download manuscript from
+http://www-stat.stanford.edu/~nzhang/web_multiplatform/ }
+\author{Nancy R. Zhang}
+\seealso{ mpcbs, plot.crossplatform, merge.pos }
 
- ~Make other sections like Warning with \section{Warning }{....} ~
-}
-\seealso{ ~~objects to See Also as \code{\link{help}}, ~~~ }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
 
-## The function is currently defined as
-function(y,pos,anchor,MIN.SNPs=2, MIN.BP.LEN=1000, rratio=NULL, f=NULL,
-                  MAX.CHPTS=30, platform.names=NULL,plots=TRUE,plotspdf=NULL,use.filtered.scan=TRUE){
-                  
-              #    MIN.SNPs=2; MIN.BP.LEN=1000; rratio=NULL; f=NULL; MAX.CHPTS=50; plots=TRUE; plotspdf=NULL; use.filtered.scan=TRUE
-                  
-    imap = anchor$imap
-    
-    cat("Using anchors containing ",length(anchor$merged.pos)," positions.\n",sep="")
-    cat("Use filtered scan: ", use.filtered.scan,", maximum change-points: ", MAX.CHPTS,"\n")
-    
-    K=length(y)
-    if(is.null(platform.names)){
-        platform.names=vector("list",K)
-        for(k in 1:K) platform.names[[k]] = paste("Platform",k)
-    }
-    
-    if(is.null(rratio)) rratio = rep(1,K)
+data(mpcbs.example)
 
-    T = length(anchor$merged.pos)
-    win=T
-    S = matrix(0,nrow=T,ncol=K)  # S[t,i] is the cumulative sum of platform i at position anchor$merged.pos[t]
-    SST = rep(0, K)
-    sigma = rep(0,K)
-        
-    for(i in 1:K){
-        S.i = cumsum(y[[i]])
-        S.i = c(0,S.i)
-        S[,i] = S.i[imap[,i]] # S[t,i] sums up all probes in platform i falling before merged.pos[t] 
-        SST[i] =  sum((y[[i]]-mean(y[[i]]))^2)
-        sigma[i] = sqrt(compute.var(y[[i]]))
-    }
-    
-    
-    chpts = c(1,T)
-    if(use.filtered.scan){
-        bestZ=fcompute.max.ProjectedZ(S,SST,imap,win,rratio,MIN.SNPs,f=f)
-    }else {
-        bestZ =compute.max.ProjectedZ(S,SST,imap,win,rratio,MIN.SNPs)
-    }
-    
-    best.subchpt= matrix(bestZ$bestchpt,ncol=1,nrow=2)
-    best.Z = bestZ$bestZ
- 
-    splitnum=0
-    chpt.hist = vector("list",MAX.CHPTS)
-    mbic=vector("list",MAX.CHPTS)
-    
-    if(plots && !is.null(plotspdf)) pdf(plotspdf,height=10.5,width=8)
-    
-    while(length(chpts)<MAX.CHPTS+2){
-           
-        if(sum(!is.na(best.Z))==0) break
-         
-        # ---------------------------------------------------------------
-        # Find the next split and compute left center, and right optimums.
-        # ----------------------------------------------------------------
-        splitnum=splitnum+1
-        max.Z = max(best.Z,na.rm=TRUE)
-        max.region = which.max(best.Z)
-        newchpt = c(best.subchpt[1,max.region],best.subchpt[2,max.region])
-        cat("Split ",splitnum,": ",newchpt[1],", ",newchpt[2],", Z-score = ",round(max.Z,1),".\n",sep="")
-        
-        S.L = S[chpts[max.region]:newchpt[1],]- matrix(S[chpts[max.region],],nrow=newchpt[1]-chpts[max.region]+1,ncol=K,byrow=T)
-        S.M =  S[newchpt[1]:newchpt[2],]- matrix(S[newchpt[1],],nrow=newchpt[2]-newchpt[1]+1,ncol=K,byrow=T)
-        S.R = S[newchpt[2]:chpts[max.region+1],] - matrix(S[newchpt[2],],nrow=chpts[max.region+1]-newchpt[2]+1,ncol=K,byrow=T)
-        
-        SST.L = rep(0,K); SST.M=rep(0,K); SST.R=rep(0,K)
-        for(i in 1:K){
-            SST.L[i] = sum( (y[[i]][imap[chpts[max.region],i]:(imap[newchpt[1],i]-1)] - mean(y[[i]][imap[chpts[max.region],i]:(imap[newchpt[1],i]-1)]))^2)
-            SST.M[i] = sum( (y[[i]][imap[newchpt[1],i]:(imap[newchpt[2],i]-1)] - mean(y[[i]][imap[newchpt[1],i]:(imap[newchpt[2],i]-1)]))^2)
-            SST.R[i] = sum( (y[[i]][imap[newchpt[2],i]:(imap[chpts[max.region+1],i]-1)] - mean(y[[i]][imap[newchpt[2],i]:(imap[chpts[max.region+1],i]-1)]))^2)
-        }
-        
-        imap.L = imap[chpts[max.region]:newchpt[1],]
-        imap.M = imap[newchpt[1]:newchpt[2],]
-        imap.R = imap[newchpt[2]:chpts[max.region+1],]
-        
-        if(use.filtered.scan){
-           bestZ.L = fcompute.max.ProjectedZ(S.L,SST.L,imap.L,win,rratio,MIN.SNPs,f=f)
-           bestZ.M = fcompute.max.ProjectedZ(S.M,SST.M,imap.M,win,rratio,MIN.SNPs,f=f)
-           bestZ.R = fcompute.max.ProjectedZ(S.R,SST.R,imap.R,win,rratio,MIN.SNPs,f=f)
-        } else {
-            bestZ.L = compute.max.ProjectedZ(S.L,SST.L,imap.L,win,rratio,MIN.SNPs)
-            bestZ.M = compute.max.ProjectedZ(S.M,SST.M,imap.M,win,rratio,MIN.SNPs)
-            bestZ.R = compute.max.ProjectedZ(S.R,SST.R,imap.R,win,rratio,MIN.SNPs)
-        }
-        
-        # --------------------------------------
-        # If the # base pairs in any of the new
-        # segments is < MIN.BP.LEN set those Z
-        # to NA.  don't need to change bestchpt
-        # because those segments would never be selected.
-        # this is different from when it's < MIN.SNPs,
-        # in that case bestchpt would not be defined.
-        # ---------------------------------------
-        if(! is.na(bestZ.L$bestZ)){
-            newlen.L = anchor$merged.pos[bestZ.L$bestchpt[1]+chpts[max.region]-1]-anchor$merged.pos[chpts[max.region]]
-            newlen.M = anchor$merged.pos[bestZ.L$bestchpt[2]+chpts[max.region]-1]-anchor$merged.pos[bestZ.L$bestchpt[1]+chpts[max.region]-1] 
-            newlen.R = anchor$merged.pos[newchpt[1]]-anchor$merged.pos[bestZ.L$bestchpt[2]+chpts[max.region]-1] 
-            if( (newlen.M< MIN.BP.LEN)
-            ||  ((newlen.L< MIN.BP.LEN) && (newlen.R< MIN.BP.LEN)) )
-            {
-                bestZ.L$bestZ = NA
-            }
-        }
-        if(! is.na(bestZ.M$bestZ)){
-            newlen.L = anchor$merged.pos[bestZ.M$bestchpt[1]+newchpt[1]-1]-anchor$merged.pos[newchpt[1]]
-            newlen.M = anchor$merged.pos[bestZ.M$bestchpt[2]+newchpt[1]-1]-anchor$merged.pos[bestZ.M$bestchpt[1]+newchpt[1]-1] 
-            newlen.R = anchor$merged.pos[newchpt[2]]-anchor$merged.pos[bestZ.M$bestchpt[2]+newchpt[1]-1] 
-            if( (newlen.M< MIN.BP.LEN)
-            ||  ((newlen.L< MIN.BP.LEN) && (newlen.R< MIN.BP.LEN)) )
-            {
-                bestZ.M$bestZ = NA
-            }
-        }
-    
-        if(! is.na(bestZ.R$bestZ)){
-            newlen.L = anchor$merged.pos[bestZ.R$bestchpt[1]+newchpt[2]-1]-anchor$merged.pos[newchpt[2]]
-            newlen.M = anchor$merged.pos[bestZ.R$bestchpt[2]+newchpt[2]-1]-anchor$merged.pos[bestZ.R$bestchpt[1]+newchpt[2]-1] 
-            newlen.R = anchor$merged.pos[chpts[max.region+1]]-anchor$merged.pos[bestZ.R$bestchpt[2]+newchpt[2]-1] 
-            if( (newlen.M< MIN.BP.LEN)
-            ||  ((newlen.L< MIN.BP.LEN) && (newlen.R< MIN.BP.LEN) ) )
-            {
-                bestZ.R$bestZ = NA
-            }
-        }
-        
-        # -----------------------------------
-        # Add new chpt into list.
-        # -----------------------------------
-        if(max.region>1){ 
-            leftpart = best.subchpt[,1:(max.region-1)]
-            leftpart.Z=best.Z[1:(max.region-1)]
-        }else {
-            leftpart = matrix(0,ncol=0, nrow=2)
-            leftpart.Z = matrix(0,ncol=0,nrow=0)
-        }
-        if(max.region+1 <= ncol(best.subchpt)){ 
-            rightpart = best.subchpt[,(max.region+1):ncol(best.subchpt)]
-            rightpart.Z = best.Z[(max.region+1):length(best.Z)]
-        }else  {
-            rightpart = matrix(0,ncol=0, nrow=2)
-            rightpart.Z=matrix(0,ncol=0,nrow=0)
-        }
-        chpt.hist[[splitnum]] = list(chpts=chpts,max.region=max.region, newchpt=newchpt,max.Z=max.Z)
-        best.Z = c(leftpart.Z, bestZ.L$bestZ, bestZ.M$bestZ, bestZ.R$bestZ, rightpart.Z)    
-        best.subchpt = cbind(leftpart, 
-                             bestZ.L$bestchpt+chpts[max.region]-1, 
-                             bestZ.M$bestchpt+newchpt[1]-1, 
-                             bestZ.R$bestchpt+newchpt[2]-1,
-                             rightpart)
-        chpts = c(chpts[1:max.region],newchpt, chpts[(max.region+1):length(chpts)])  
-        
-        mbic[[splitnum]] = mbic.mp(S,imap=imap,sigma=sigma, tau=chpts,rratio=rratio)
-    
-        # ---------------------------------------
-        # Progress plots.
-        # ---------------------------------------
-        if(plots){
-      #      png(paste("mpcbs_",splitnum,".png",sep=""),height=1200,width=800)
-            par(mfrow=c(K+1,1))
-            notna = which(!is.na(best.Z))
-            xmin=min(anchor$merged.pos); xmax=max(anchor$merged.pos)
-            for(k in 1:K){
-                plot(pos[[k]],y[[k]], pch=17,col="blue",xlim=c(xmin,xmax),main=platform.names[[k]],ylab="",xlab="base position")
-                segments(anchor$merged.pos[chpts],rep(min(y[[k]]),length(chpts)),anchor$merged.pos[chpts],rep(max(y[[k]]),length(chpts)),col="black",lwd=2)
-                if(length(notna)>0){
-                    segments(anchor$merged.pos[best.subchpt[1,notna]],rep(min(y[[k]]),length(notna)),anchor$merged.pos[best.subchpt[1,notna]],rep(max(y[[k]]),length(notna)),col="red",lty=4)
-                    segments(anchor$merged.pos[best.subchpt[2,notna]],rep(min(y[[k]]),length(notna)),anchor$merged.pos[best.subchpt[2,notna]],rep(max(y[[k]]),length(notna)),col="red",lty=4)
-                }
-            }
-            Zplot = rep(0, length(anchor$merged.pos))
-            if(length(notna)>0){
-                for( i in 1:length(notna)){
-                    Zplot[best.subchpt[1,notna[i]]:best.subchpt[2,notna[i]]] = sqrt(max(0,best.Z[notna[i]]))
-                }
-            }
-            plot(anchor$merged.pos, Zplot, xlim=c(xmin,xmax),col="red",type="l",lwd=3,
-                    main=paste("Cross-platform Evidence for the Next Split (Iteration ",splitnum,")",sep=""), ylab="- sqrt log p-value")
-            segments(anchor$merged.pos[chpts],rep(min(Zplot),length(chpts)),anchor$merged.pos[chpts],rep(max(Zplot),length(chpts)),lwd=2,col="black")       
-        }
-        
-        
-    }
-    
-    # Summarize change-points.
-    
-    if(splitnum>0){
-        mbic.tot = rep(0, splitnum)
-        term1 = rep(0,splitnum)
-        term2 = rep(0,splitnum)
-        term3 = rep(0,splitnum)
-        for(i in 1:splitnum){
-            mbic.tot[i] = mbic[[i]]$mbic
-            term1[i] = mbic[[i]]$term1
-            term2[i] = mbic[[i]]$term2
-            term3[i] = mbic[[i]]$term3
-        }  
-                
-        kstar = which.max(mbic.tot)
-        if(plots){
-            par(mfrow=c(1,1))
-            # plot(term1, type="b", ylim=c(min(c(term1,mbic.tot)), max(c(term1,mbic.tot))))
-            plot(mbic.tot,type="b", col="red", main="Modified BIC")
-            
-            segments(kstar,0, kstar, max(mbic.tot))
-            
-            # plot(term2, type="b", col="blue",ylim=c(min(c(term2,term3)), max(c(term2,term3))))
-            # points(term3,type="b", col="darkgreen")
-        }
+# there are 3 platforms represented in this data example: Illumina, Affymetrix, and Agilent.
+names(mpcbs.example)
 
-        
-        chpts.final = c(chpt.hist[[kstar]]$chpts[1:chpt.hist[[kstar]]$max.region],
-                        chpt.hist[[kstar]]$newchpt, 
-                        chpt.hist[[kstar]]$chpts[(chpt.hist[[kstar]]$max.region+1):length(chpt.hist[[kstar]]$chpts)])  
-    } else {
-        chpt.final=c(1,T)
-    }
-    
-    yhat = vector("list",K)
-    for(k in 1:K){
-        yhat[[k]]=rep(0,length(y[[k]]))
-        yhat[[k]][1:imap[1,k]] =mean( y[[k]][1:(imap[chpts.final[2],k]-1)])
-        for(i in 1:(length(chpts.final)-1)){
-            yhat[[k]][imap[chpts.final[i],k]:(imap[chpts.final[i+1],k]-1)]=mean( y[[k]][imap[chpts.final[i],k]:(imap[chpts.final[i+1],k]-1)] )
-        }
-        
-        yhat[[k]] = yhat[[k]][1:length(y[[k]])]  # sometimes, imap[chpts.final[i],k] = (total # snps in k platform)+1, even when i is not last change-point.
-    }
-    
-    if(length(chpts.final)>2){
-        chpts.final = chpts.final[2:(length(chpts.final)-1)]
-    } else{
-        chpts.final=integer(0)
-    }
-    
-    if(plots) plot.crossplatform(pos,y,anchor,chpts.final, ranking=NULL, yhat=yhat,platform.names=platform.names)
-    if(plots && !is.null(plotspdf)) dev.off()
+# K is the number of platforms.
+K=3
 
-    cat("MPCBS with MBIC regularization is done.\n")
-    if(!is.null(plotspdf)) cat("  Progress plots are in the file ",plotspdf,".\n",sep="")
-    
-    # YS. Adding segment matrix to the output (with physical locations)
-    physloc = anchor$merged.pos
-    num.cuts = length(chpts.final)
-    seg.bounds = chpts.final
-    if(seg.bounds[1] != 1) seg.bounds = c(1,seg.bounds)
-    if(seg.bounds[(num.cuts+1)] != length(physloc))  seg.bounds = c(seg.bounds,length(physloc))
-    lenseg = length(seg.bounds)
-    
-    segment.mat = matrix(NA,nrow=(lenseg-1),ncol=2)        
-    segment.mat[1,1] = 1
-    segment.mat[,2] = seg.bounds[-1]
-    fillCol = seg.bounds[-c(1,lenseg)]
-    segment.mat[2:(lenseg-1),1] = fillCol+1        
-       
-    list(anchor=anchor, yhat=yhat,chpts=chpts.final, segmat=segment.mat, chpt.hist=chpt.hist, mbic=mbic.tot, term1=term1)
-  }
+# Store the chromosome positions in vector pos,
+# the intensities in vector y:
+
+pos=vector("list",K)
+pos[[1]] = mpcbs.example$illu[,1]
+pos[[2]] = mpcbs.example$affy[,1]
+pos[[3]] = mpcbs.example$agil[,1]
+
+y = vector("list",K)
+y[[1]] = mpcbs.example$illu[,2]
+y[[2]] = mpcbs.example$affy[,2]
+y[[3]] = mpcbs.example$agil[,2]
+
+# Names of the platforms:
+platform.names=c("Illumina","Affymetrix","Agilent")
+
+# Get the anchor set.
+anchor = merge.pos(pos)
+
+# Perform the segmentation.
+seg<-mpcbs.mbic(y,pos,anchor, MAX.CHPTS=50, platform.names=platform.names,plots=TRUE)
+
+
+# Plot the data and segmentation, giving it yhat and change-points.
+plot.crossplatform(pos,y, yhat=seg$yhat, chpts=seg$chpts, anchor=anchor, platform.names=platform.names, col="darkgray")
+
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{change-point}
+\keyword{segmentation}
+\keyword{DNA copy number}
+\keyword{cross-platform integration}
