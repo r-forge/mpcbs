@@ -41,6 +41,9 @@
 \alias{update.bic.baseline}
 \alias{vu}
 \alias{wpca}
+\alias{scatter.ci}
+\alias{scatter.cpfit}
+
 
 \title{Internal mpcbs Functions}
 \description{
