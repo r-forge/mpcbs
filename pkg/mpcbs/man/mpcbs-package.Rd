@@ -82,7 +82,7 @@ platform.names=c("Illumina","Affymetrix","Agilent")
 anchor = merge.pos(pos)
 
 # Perform the segmentation.
-seg<-mpcbs.mbic(y,pos,anchor, MAX.CHPTS=50, platform.names=platform.names,plots=TRUE)
+seg<-mpcbs.mbic(y,pos,anchor, MAX.CHPTS=10, platform.names=platform.names,plots=TRUE)
 
 # Compute platform specific variance terms.
 sigma2 = rep(0,K)
@@ -102,7 +102,7 @@ plot(anchor$merged.pos, consensus.cn, type="l", lwd=2, col="red",
         xlab="Genome Position", ylab="Log Ratio", main="Consensus Copy Number Estimate", cex.lab=2)
     
 # Zoom in:
-xmin=5e7; xmax=1e8
+xmin=5.4e7; xmax=5.7e7
 plot.crossplatform(pos,y, yhat=seg$yhat, anchor=anchor,platform.names=platform.names, num.panels=K+1, xlim=c(xmin,xmax), col="darkgray")
 plot(anchor$merged.pos, consensus.cn, type="l", lwd=2, col="red", 
         xlab="Genome Position", ylab="Log Ratio", main="Consensus Copy Number Estimate", cex.lab=2, xlim=c(xmin,xmax))

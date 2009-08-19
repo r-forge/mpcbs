@@ -57,13 +57,6 @@ platform.names=c("Illumina","Affymetrix","Agilent")
 # Get the anchor set.
 anchor = merge.pos(pos)
 
-# Perform the segmentation.
-seg<-mpcbs.mbic(y,pos,anchor, MAX.CHPTS=50, platform.names=platform.names,plots=TRUE)
-
-
-# Plot the data and segmentation, giving it yhat and change-points.
-plot.crossplatform(pos,y, yhat=seg$yhat, chpts=seg$chpts, anchor=anchor, platform.names=platform.names, col="darkgray")
-
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

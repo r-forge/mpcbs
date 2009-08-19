@@ -255,6 +255,6 @@ function(y,pos,anchor,MIN.SNPs=2, MIN.BP.LEN=1000, rratio=NULL, f=NULL,
     fillCol = seg.bounds[-c(1,lenseg)]
     segment.mat[2:(lenseg-1),1] = fillCol+1        
        
-    list(yhat=yhat,chpts=chpts.final, segmat=segment.mat, chpt.hist=chpt.hist, mbic=mbic.tot, term1=term1)
+    list(yhat=yhat,chpts=chpts.final, anchor=anchor, segmat=segment.mat, chpt.hist=chpt.hist, mbic=mbic.tot, term1=term1)
 }
 

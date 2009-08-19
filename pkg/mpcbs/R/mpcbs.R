@@ -1,10 +1,9 @@
 `mpcbs` <-
-function(y,pos,anchors,win,Z=NULL,MIN.SNPs=2, MIN.BP.LEN=10000, ALPHA=0, rratio=NULL, f=NULL,
+function(y,pos,anchor,win,Z=NULL,MIN.SNPs=2, MIN.BP.LEN=10000, ALPHA=0, rratio=NULL, f=NULL,
                   MAX.CHPTS=50, WCHISQ.CUTOFF=NA,platform.names=NULL,plots=TRUE,plotspdf=NULL,use.filtered.scan=TRUE, useProjectedChisquare=TRUE){
                                         # For debugging:
                                         #    anchors=c(1,3); win=500; Z=NULL; MIN.SNPs=2; ALPHA=0; MAX.CHPTS=20; WCHISQ.CUTOFF=20;
     
-    anchor = merge.pos(pos,anchors=anchors)
     imap = anchor$imap
     
     cat("Created anchors containing ",length(anchor$merged.pos)," positions.\n",sep="")

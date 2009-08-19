@@ -33,7 +33,7 @@ http://www-stat.stanford.edu/~nzhang/web_multiplatform/ }
 \seealso{ mpcbs, mpcbs.mbic, plot.crossplatform }
 \examples{
 
-data(mpcbsexample)
+data(mpcbs.example)
 
 # there are 3 platforms represented in this data example: Illumina, Affymetrix, and Agilent.
 names(mpcbs.example)

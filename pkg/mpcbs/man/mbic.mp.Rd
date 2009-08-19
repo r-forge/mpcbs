@@ -1,102 +1,65 @@
 \name{mbic.mp}
 \alias{mbic.mp}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{ ~~function to do ... ~~ }
+\title{Computes the modified BIC for a given multi-platform segmentation. }
 \description{
-  ~~ A concise (1-5 lines) description of what the function does. ~~
+ Computes the modified BIC for a given multi-platform segmentation. 
 }
 \usage{
 mbic.mp(S, imap, sigma, tau, rratio)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{S}{ ~~Describe \code{S} here~~ }
-  \item{imap}{ ~~Describe \code{imap} here~~ }
-  \item{sigma}{ ~~Describe \code{sigma} here~~ }
-  \item{tau}{ ~~Describe \code{tau} here~~ }
-  \item{rratio}{ ~~Describe \code{rratio} here~~ }
-}
-\details{
-  ~~ If necessary, more details than the description above ~~
+  \item{S}{cumulative sums.}
+  \item{imap}{imap object from an anchor set.}
+  \item{sigma}{platform specific variances.}
+  \item{tau}{a vector of ascending change-points. }
+  \item{rratio}{response ratio for each platform. }
 }
 \value{
-  ~Describe the value returned
-  If it is a LIST, use
-  \item{comp1 }{Description of 'comp1'}
-  \item{comp2 }{Description of 'comp2'}
-  ...
+  \item{mbic}{mbic}
+  \item{term1}{term 1 of the modified BIC}
+  \item{term2}{term 2 of the modified BIC}
+  \item{term3}{term 3 of the modified BIC}
 }
-\references{ ~put references to the literature/web site here ~ }
-\author{ ~~who you are~~ }
-\note{ ~~further notes~~ 
 
- ~Make other sections like Warning with \section{Warning }{....} ~
-}
-\seealso{ ~~objects to See Also as \code{\link{help}}, ~~~ }
+\references{ Zhang, NR, Senbabaoglu, Y. and Li, J.Z. (2009) Joint Estimation of DNA Copy Number from Multiple Platforms.  Under review, download manuscript from
+http://www-stat.stanford.edu/~nzhang/web_multiplatform/ }
+\author{Nancy R. Zhang}
+\seealso{ mpcbs, plot.crossplatform, merge.pos }
+
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
 
-## The function is currently defined as
-function(S,imap,sigma,tau,rratio){
+data(mpcbs.example)
 
-    m=length(tau)-2
-    K=ncol(S)
-    nrS = nrow(S)
+# there are 3 platforms represented in this data example: Illumina, Affymetrix, and Agilent.
+names(mpcbs.example)
+
+# K is the number of platforms.
+K=3
+
+# Store the chromosome positions in vector pos,
+# the intensities in vector y:
+
+pos=vector("list",K)
+pos[[1]] = mpcbs.example$illu[,1]
+pos[[2]] = mpcbs.example$affy[,1]
+pos[[3]] = mpcbs.example$agil[,1]
+
+y = vector("list",K)
+y[[1]] = mpcbs.example$illu[,2]
+y[[2]] = mpcbs.example$affy[,2]
+y[[3]] = mpcbs.example$agil[,2]
+
+# Names of the platforms:
+platform.names=c("Illumina","Affymetrix","Agilent")
 
 
-    if(m>=1){
-        # NOTE: this assumes that the last imap-position is at or to the right of the last SNP for all platforms.
-        # this wouldn't be true if, e.g., only Agilent was used as probes, and the last position in anchor$merged.pos 
-        # is still to the left of many of the Affy SNPs.  Then, the last row of imap would not contain the number of SNPs in Affy.
-        tot.snps = imap[nrow(imap),]   # tot.snps here is actually tot.snps+1, verified that this is correct.
-           
-        X = matrix(ncol=K, nrow=m, data=0)
-        n = matrix(ncol=K, nrow=m+1, data=0)
-        delta = matrix(ncol=K, nrow=m, data=0)
-        U = rep(0,m) 
-        
-        for(i in 1:m){
-            for(k in 1:K){
-                n[i,k] = imap[tau[i+1],k] 
-            }
-        }
-        n[m+1,] = tot.snps
-        
-        for(i in 1:m){
-            for(k in 1:K){
-                X[i,k] = (S[tau[i+1],k] - n[i,k]*S[tau[i+2],k]/n[i+1,k])/(sigma[k]*sqrt(n[i,k]*(1-n[i,k]/n[i+1,k])))
-                delta[i,k] = rratio[k]*sqrt(n[i,k])/sigma[k]
-                if(!is.finite(X[i,k])){ 
-                    X[i,k] = 0  # Some change-points may involve only points not in platform k, thus, the contribution from platform k should be 0.
-                }
-            }
-            U[i] = sum(delta[i,]*X[i,])/sqrt(sum(delta[i,]^2))
-        }
-        
-        effect.samp.size = rep(0,m+1)
-        effect.samp.size[1] = sum(n[1,])
-        for(i in 1:m){
-            effect.samp.size[i+1] = sum(n[i+1,]-n[i,])
-        }
-        
-        term1 = 0.5*sum(U^2)
-        term2 = - 0.5*sum(log(effect.samp.size[effect.samp.size>0])) 
-        term3 = - lchoose(nrS, m)
-        
-        mbic = term1+term2+term3
-        
-            # questions:  should there be a -log(tot.snps) term here?
-            
-    } else {
-        mbic=0; term1 = 0;  term2 = 0; term3 = 0
-    }
-    
-    list(mbic=mbic, term1=term1, term2=term2, term3=term3)
-  }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{change-point}
+\keyword{segmentation}
+\keyword{DNA copy number}
+\keyword{cross-platform integration}
+
+

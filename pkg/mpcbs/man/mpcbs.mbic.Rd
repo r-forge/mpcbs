@@ -75,7 +75,7 @@ platform.names=c("Illumina","Affymetrix","Agilent")
 anchor = merge.pos(pos)
 
 # Perform the segmentation.
-seg<-mpcbs.mbic(y,pos,anchor, MAX.CHPTS=50, platform.names=platform.names,plots=TRUE)
+seg<-mpcbs.mbic(y,pos,anchor, MAX.CHPTS=10, platform.names=platform.names,plots=TRUE)
 
 
 # Plot the data and segmentation, giving it yhat and change-points.

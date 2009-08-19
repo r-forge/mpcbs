@@ -42,8 +42,9 @@ yhat=yhat,chpts=chpts.final,ranking=ranking,Z.score=maxZ
   \item{Z.score }{the z-score associated with each interval.}
   
   \item{ranking}{ranking of the intervals in terms of z-score.}
-  ...
-}\references{ Zhang, NR, Senbabaoglu, Y. and Li, J.Z. (2009) Joint Estimation of DNA Copy Number from Multiple Platforms.  Under review, download manuscript from
+ 
+}
+\references{ Zhang, NR, Senbabaoglu, Y. and Li, J.Z. (2009) Joint Estimation of DNA Copy Number from Multiple Platforms.  Under review, download manuscript from
 http://www-stat.stanford.edu/~nzhang/web_multiplatform/ }
 \author{Nancy R. Zhang}
 \seealso{ mpcbs, plot.crossplatform, merge.pos }
@@ -78,11 +79,11 @@ platform.names=c("Illumina","Affymetrix","Agilent")
 anchor = merge.pos(pos)
 
 # Perform the segmentation.
-seg<-mpcbs.mbic(y,pos,anchor,WCHISQ.CUTOFF=10, platform.names=platform.names,plots=TRUE)
+#seg<-mpcbs(y,pos,anchor,WCHISQ.CUTOFF=10, platform.names=platform.names,plots=TRUE)
 
 
 # Plot the data and segmentation, giving it yhat and change-points.
-plot.crossplatform(pos,y, yhat=seg$yhat, chpts=seg$chpts, anchor=anchor, platform.names=platform.names, col="darkgray")
+#plot.crossplatform(pos,y, yhat=seg$yhat, chpts=seg$chpts, anchor=anchor, platform.names=platform.names, col="darkgray")
 
 
 }
