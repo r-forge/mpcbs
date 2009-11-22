@@ -339,6 +339,52 @@ function(g,theta){
     list(psi=psi,psidot=psidot,psidotdot=psidotdot)
 }
 
+`ComputeProjectedZ.fromS.R.segments`<-
+function(this.S, this.SST,this.imap,segs,rratio,MIN.SNPs){
+    T = nrow(this.S)
+    N = ncol(this.S)
+    dfnum <- 1;
+    totalsnps = this.imap[T,] - this.imap[1,]
+    dfden = totalsnps-2
+
+
+    m = nrow(segs)
+
+    Z = rep(0,m)
+    X = matrix(nrow=m, ncol=length(rratio),data=0)
+    w = matrix(nrow=m, ncol=length(rratio),data=0)
+
+    for(i in 1:m){
+        st = segs[i,1]
+        ed = segs[i,2]
+        if(st > 0 && st < ed && ed<T){
+
+          nsnps = this.imap[ed,] - this.imap[st,]
+          diff1 = this.S[ed,]-this.S[st,]
+          temp = diff1/nsnps - this.S[T,]/totalsnps
+          SSb = nsnps*(temp)^2
+          SSb = SSb + (totalsnps-nsnps)*((this.S[T,]-diff1)/(totalsnps-nsnps)-this.S[T,]/totalsnps)^2;
+          SSw = this.SST - SSb
+          U = sqrt((SSb/dfnum)/(SSw/dfden))
+
+          weightU = sign(temp)*sqrt(nsnps*(1-nsnps/totalsnps)/(SSw/dfden))
+
+          weightU[which(is.na(weightU))]=0
+
+
+          set.to.zero = which(nsnps<MIN.SNPs | ((totalsnps-nsnps)<MIN.SNPs))
+          U[set.to.zero] = 0
+          Z[i] = sum(U*weightU*rratio)/sqrt(sum(rratio^2*weightU^2))
+          Z[i] = Z[i]^2
+          X[i,] = U
+          w[i,] = abs(weightU*rratio/sqrt(sum(rratio^2*weightU^2)))
+
+        }
+    }
+
+    list(Z = Z, X = X, w = w)
+}
+
 
 `ComputeProjectedZ.fromS.R.partial` <-
 function(this.S,this.SST,this.imap,start.inds, end.inds,rratio,MIN.SNPs){
@@ -795,7 +841,7 @@ function(this.S, this.SST,  y.var=NULL, use.BY.statistic=FALSE, use.Project.stat
             ind.R = chpts[i,2] %/% stepsize
             
             check.win = f[r]/f[r-1]
-            start.inds = c((ind.L - check.win):(ind.L+check.win))  
+	    start.inds = c((ind.L - check.win):(ind.L+check.win))  
             end.inds = c((ind.R-check.win):(ind.R+check.win))
             
                   
@@ -815,10 +861,15 @@ function(this.S, this.SST,  y.var=NULL, use.BY.statistic=FALSE, use.Project.stat
             #  image.plot(start.inds,end.inds,Z.part, xlab="Start of change - 1", ylab="End of change")
     
             maxind = matrix.max(Z.part)
-            improved.cp = c(t[start.inds[maxind[1]]]+1, t[end.inds[maxind[2]]])
+            improved.cp = c(t[start.inds[maxind[1]]], t[end.inds[maxind[2]]])
             improved.Z = Z.part[maxind[1],maxind[2]]
             if(verbose) cat("fscan.max: Changepoints (",chpts[i,1],", ",chpts[i,2],") refined to (", improved.cp[1],", ",improved.cp[2],").  Z-score improved from ", chpts.Z[i]," to ",improved.Z,"\n", sep="")
-            chpts[i,] = improved.cp
+	    if(length(improved.cp)>=2){
+	    chpts[i,] = improved.cp[1:2]
+	    }else{
+	    chpts[i,1]=improved.cp[1]
+	    chpts[i,2]=improved.cp[1]
+		}
             chpts.Z[i] = improved.Z
           }
         }
