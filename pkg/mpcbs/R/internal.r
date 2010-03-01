@@ -386,7 +386,8 @@ function(this.S, this.SST,this.imap,segs,rratio,MIN.SNPs){
 }
 
 
-`ComputeProjectedZ.fromS.R.partial` <-
+
+`ComputeProjectedZ.fromS.R.partial`<-
 function(this.S,this.SST,this.imap,start.inds, end.inds,rratio,MIN.SNPs){
     T = nrow(this.S)
     N = ncol(this.S)
@@ -413,7 +414,12 @@ function(this.S,this.SST,this.imap,start.inds, end.inds,rratio,MIN.SNPs){
           weightU = sign(temp)*sqrt(nsnps*(1-nsnps/totalsnps)/(SSw/dfden))
 #          weightU = sign(temp)
           
-          set.to.zero = which(nsnps<MIN.SNPs | ((totalsnps-nsnps)<MIN.SNPs))
+          # 2010/02/21: need to change this part so that both left and the right segments have MIN.SNPs, not just the sum!!!
+          # set.to.zero = which(nsnps<MIN.SNPs | ((totalsnps-nsnps)<MIN.SNPs))
+          nsnpsL = this.imap[st,] # number of snps to the left of the first change-point.
+          nsnpsR = this.imap[T,] - this.imap[ed,]
+          set.to.zero = which(nsnps<MIN.SNPs | nsnpsL<MIN.SNPs | nsnpsR<MIN.SNPs)
+          
           U[set.to.zero] = 0
           Z[i,j] = sum(U*weightU*rratio)/sqrt(sum(rratio^2*weightU^2))
         }
@@ -427,7 +433,8 @@ function(this.S,this.SST,this.imap,start.inds, end.inds,rratio,MIN.SNPs){
 }
 
 
-`ComputeProjectedZ.fromS.R` <-
+
+`ComputeProjectedZ.fromS.R`<-
 function(this.S,this.SST,this.imap,win,rratio,MIN.SNPs){
     T = nrow(this.S) # Number of SNPs.
     N = ncol(this.S) # Number of samples/platforms
@@ -456,8 +463,12 @@ function(this.S,this.SST,this.imap,win,rratio,MIN.SNPs){
                 U[1:(T-k),k] = sqrt(SSb/(SSw/dfden));
                 weightU[1:(T-k),k] = sign(temp)*sqrt(nsnps*(1-nsnps/totalsnps)/(SSw/dfden))
 #                weightU[1:(T-k),k] = sign(temp)
-                
-                set.to.zero = which(nsnps<MIN.SNPs | ((totalsnps-nsnps)<MIN.SNPs))
+
+                # 2010/02/21: need to change this part so that both left and the right segments have MIN.SNPs, not just the sum!!!
+                # set.to.zero = which(nsnps<MIN.SNPs | ((totalsnps-nsnps)<MIN.SNPs))
+                nsnpsL = this.imap[1:(T-k),i] # number of snps to the left of the first change-point.
+                nsnpsR = totalsnps - this.imap[(k+1):T,i]
+                set.to.zero = which(nsnps<MIN.SNPs | nsnpsL<MIN.SNPs | nsnpsR<MIN.SNPs)
                 U[set.to.zero,k] = 0
         }
         Z <- Z+rratio[i]*weightU*U;
@@ -467,6 +478,9 @@ function(this.S,this.SST,this.imap,win,rratio,MIN.SNPs){
     Z[which(is.na(Z), arr.ind=TRUE)]=0
     return(Z)
 }
+
+
+
 
 `computeTiltDirect` <-
 function(b,g,THRESH,theta0) {
@@ -784,7 +798,8 @@ function(z){
   z.flat = matrix(data=z,nrow=n, ncol=1)
 }
 
-`fscan.max` <-
+
+`fscan.max`<-
 function(this.S, this.SST,  y.var=NULL, use.BY.statistic=FALSE, use.Project.statistic=FALSE, this.imap=NULL, 
                     f=NULL,MIN.SNPs=2,ALPHA=0,delta=c(1,-1), rratio=NULL, doplots=FALSE, verbose=FALSE){
   T=nrow(this.S)   # Number of SNPs
@@ -824,8 +839,8 @@ function(this.S, this.SST,  y.var=NULL, use.BY.statistic=FALSE, use.Project.stat
         t = seq(1,T,stepsize) # t is the filtered anchor set.
         if(t[length(t)]<T) t = c(t,T) # always include the last datapoint in the set.
     
-        f.S = this.S[t,]
-        f.imap = this.imap[t,]
+        f.S = this.S[t,,drop=FALSE]
+        f.imap = this.imap[t,,drop=FALSE]
     
         # produce a diagnostic plot.
         if(doplots){
@@ -841,7 +856,7 @@ function(this.S, this.SST,  y.var=NULL, use.BY.statistic=FALSE, use.Project.stat
             ind.R = chpts[i,2] %/% stepsize
             
             check.win = f[r]/f[r-1]
-	    start.inds = c((ind.L - check.win):(ind.L+check.win))  
+            start.inds = c((ind.L - check.win):(ind.L+check.win))  
             end.inds = c((ind.R-check.win):(ind.R+check.win))
             
                   
@@ -861,15 +876,10 @@ function(this.S, this.SST,  y.var=NULL, use.BY.statistic=FALSE, use.Project.stat
             #  image.plot(start.inds,end.inds,Z.part, xlab="Start of change - 1", ylab="End of change")
     
             maxind = matrix.max(Z.part)
-            improved.cp = c(t[start.inds[maxind[1]]], t[end.inds[maxind[2]]])
+            improved.cp = c(t[start.inds[maxind[1]]]+1, t[end.inds[maxind[2]]])
             improved.Z = Z.part[maxind[1],maxind[2]]
             if(verbose) cat("fscan.max: Changepoints (",chpts[i,1],", ",chpts[i,2],") refined to (", improved.cp[1],", ",improved.cp[2],").  Z-score improved from ", chpts.Z[i]," to ",improved.Z,"\n", sep="")
-	    if(length(improved.cp)>=2){
-	    chpts[i,] = improved.cp[1:2]
-	    }else{
-	    chpts[i,1]=improved.cp[1]
-	    chpts[i,2]=improved.cp[1]
-		}
+            chpts[i,] = improved.cp
             chpts.Z[i] = improved.Z
           }
         }
@@ -912,6 +922,7 @@ function(this.S, this.SST,  y.var=NULL, use.BY.statistic=FALSE, use.Project.stat
   }
   list(maxZ = maxZ, seg = seg)
 }
+
 
 `getCutoffEpidemicChangeLocationKnown` <-
 function(pval){

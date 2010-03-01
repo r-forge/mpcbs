@@ -1,4 +1,4 @@
-`mpcbs.mbic` <-
+`mpcbs.mbic` <- 
 function(y,pos,anchor,MIN.SNPs=2, MIN.BP.LEN=1000, rratio=NULL, f=NULL,
                   MAX.CHPTS=30, platform.names=NULL,plots=TRUE,plotspdf=NULL,use.filtered.scan=TRUE){
                   
@@ -72,9 +72,9 @@ function(y,pos,anchor,MIN.SNPs=2, MIN.BP.LEN=1000, rratio=NULL, f=NULL,
             SST.R[i] = sum( (y[[i]][imap[newchpt[2],i]:(imap[chpts[max.region+1],i]-1)] - mean(y[[i]][imap[newchpt[2],i]:(imap[chpts[max.region+1],i]-1)]))^2)
         }
         
-        imap.L = imap[chpts[max.region]:newchpt[1],]
-        imap.M = imap[newchpt[1]:newchpt[2],]
-        imap.R = imap[newchpt[2]:chpts[max.region+1],]
+        imap.L = imap[chpts[max.region]:newchpt[1],,drop=FALSE]
+        imap.M = imap[newchpt[1]:newchpt[2],,drop=FALSE]
+        imap.R = imap[newchpt[2]:chpts[max.region+1],,drop=FALSE]
         
         if(use.filtered.scan){
            bestZ.L = fcompute.max.ProjectedZ(S.L,SST.L,imap.L,win,rratio,MIN.SNPs,f=f)
@@ -234,6 +234,7 @@ function(y,pos,anchor,MIN.SNPs=2, MIN.BP.LEN=1000, rratio=NULL, f=NULL,
     } else{
         chpts.final=integer(0)
     }
+    
     if(plots) plot.crossplatform(pos,y,anchor,chpts.final, ranking=NULL, yhat=yhat,platform.names=platform.names)
     if(plots && !is.null(plotspdf)) dev.off()
 
@@ -241,48 +242,21 @@ function(y,pos,anchor,MIN.SNPs=2, MIN.BP.LEN=1000, rratio=NULL, f=NULL,
     if(!is.null(plotspdf)) cat("  Progress plots are in the file ",plotspdf,".\n",sep="")
     
     # YS. Adding segment matrix to the output (with physical locations)
-    #physloc = anchor$merged.pos
-    #num.cuts = length(chpts.final)
-    #seg.bounds = chpts.final
-    #if(seg.bounds[1] != 1) seg.bounds = c(1,seg.bounds)
-    #if(seg.bounds[(num.cuts+1)] != length(physloc))  seg.bounds = c(seg.bounds,length(physloc))
-    #lenseg = length(seg.bounds)
-    
-    #segment.mat = matrix(NA,nrow=(lenseg-1),ncol=2)        
-    #segment.mat[1,1] = 1
-    #segment.mat[,2] = seg.bounds[-1]
-    #fillCol = seg.bounds[-c(1,lenseg)]
-    #segment.mat[2:(lenseg-1),1] = fillCol+1        
-       
-     #list(yhat=yhat,chpts=chpts.final, anchor=anchor, segmat=segment.mat, chpt.hist=chpt.hist, mbic=mbic.tot, term1=term1)
     physloc = anchor$merged.pos
     num.cuts = length(chpts.final)
-     
     seg.bounds = chpts.final
     if(seg.bounds[1] != 1) seg.bounds = c(1,seg.bounds)
-    if(length(seg.bounds) > num.cuts && seg.bounds[(num.cuts+1)] != length(physloc))  seg.bounds = c(seg.bounds,length(physloc))
+    if(seg.bounds[(num.cuts+1)] != length(physloc))  seg.bounds = c(seg.bounds,length(physloc))
     lenseg = length(seg.bounds)
-    segment.mat = matrix(NA,nrow=(lenseg-1),ncol=2)
+    
+    segment.mat = matrix(NA,nrow=(lenseg-1),ncol=2)        
     segment.mat[1,1] = 1
     segment.mat[,2] = seg.bounds[-1]
     fillCol = seg.bounds[-c(1,lenseg)]
-    #print(fillCol)
-    
-    if(lenseg >=3){
-    segment.mat[2:(lenseg-1),1] = fillCol+1
-    }
-    # Nancy BUG FIX: segment.mat is off by 1.
-    segment.mat =segment.mat-1
-    segment.mat[1,1]=1
-    segment.mat[nrow(segment.mat),2] = length(anchor$merged.pos)
-    segment.mat[which(segment.mat[,2] == 0),2] =1
-    # compute the contributing X, w for the reported segments
-    temp=ComputeProjectedZ.fromS.R.segments(S, SST,imap,segment.mat,rratio,MIN.SNPs)
-    X = temp$X
-    Z = temp$Z
-    w = temp$w
-
-    list(anchor=anchor, yhat=yhat,chpts=chpts.final, segmat=segment.mat, X=X,w=w,Z=Z,chpt.hist=chpt.hist, mbic=mbic.tot, term1=term1)
-
+    segment.mat[2:(lenseg-1),1] = fillCol+1        
+       
+    list(anchor=anchor, yhat=yhat,chpts=chpts.final, segmat=segment.mat, chpt.hist=chpt.hist, mbic=mbic.tot, term1=term1)
 }
+
+
 
