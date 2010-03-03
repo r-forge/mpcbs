@@ -1,5 +1,5 @@
-`cross.platform.consensus` <-
-function(segs, sigma2, platform.names, plots=TRUE){
+`cross.platform.consensus`
+<-function(segs, sigma2, platform.names, plots=TRUE){
 
     K=ncol(segs[[1]]$anchor$imap)
     
@@ -21,7 +21,7 @@ function(segs, sigma2, platform.names, plots=TRUE){
             yfit[,i] = yhat[segs[[ind]]$anchor$imap[chpts,i]]       
         }
         
-        seglen = segs[[ind]]$anchor$imap[chpts.R,] - segs[[ind]]$anchor$imap[chpts,] 
+        seglen = segs[[ind]]$anchor$imap[chpts.R,,drop=FALSE] - segs[[ind]]$anchor$imap[chpts,,drop=FALSE] 
         lab=cbind(rep(ind,length(length(chpts))), chpts, chpts.R)
         yfit.all = rbind(yfit.all, yfit)
         seglen.all = rbind(seglen.all, seglen)
@@ -53,8 +53,12 @@ function(segs, sigma2, platform.names, plots=TRUE){
 #    }
 
     # Estimate the platform-specific signal ratio.
-    cat("Estimating platform specific response ratio.\n")
-    cat("For identifiability, the ratio for ",platform.names[[K]]," is fixed at 1.\n", sep="")
+    if(K==1){
+        cat("There is only one platform: r=1, there is nothing to estimate.\n")
+    } else {
+        cat("Estimating platform specific response ratio.\n")
+        cat("For identifiability, the ratio for ",platform.names[[K]]," is fixed at 1.\n", sep="")
+    }
     cpfit = wpca(yfit, v, x.lab=platform.names, plots=plots)
     
     consensus.cn = vector("list",length(segs))
