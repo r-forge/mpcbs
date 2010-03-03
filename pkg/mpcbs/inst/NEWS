@@ -4,6 +4,7 @@ Package: mpcbs
 Version: 1.1.0 [2010-03-02]
 o BUG FIX: mpcbs.mbic() would give an error if data from only
   one platform was given.
+o BUG FIX: ...
 o BUG FIX: Argument 'MIN.SNPs' for mpcbs.mbic() was not working
   correctly.  <Nancy explain what the problem was and how it 
   works now>.

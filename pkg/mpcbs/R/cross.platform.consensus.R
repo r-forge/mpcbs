@@ -1,5 +1,5 @@
-`cross.platform.consensus`
-<-function(segs, sigma2, platform.names, plots=TRUE){
+`cross.platform.consensus` <-
+function(segs, sigma2, platform.names, plots=TRUE){
 
     K=ncol(segs[[1]]$anchor$imap)
     
