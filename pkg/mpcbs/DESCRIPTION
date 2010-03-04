@@ -1,8 +1,8 @@
 Package: mpcbs
 Type: Package
 Title: Multi-sample and Multiplatform CNV.
-Version: 1.1.0
-Date: 2010-03-02
+Version: 1.1.1
+Date: 2010-03-04
 Author: Nancy R. Zhang
 Maintainer: Nancy R. Zhang <nzhang@stanford.edu>
 Description: Multi-sample and multi-platform copy number estimation.
