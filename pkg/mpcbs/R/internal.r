@@ -387,8 +387,9 @@ function(this.S, this.SST,this.imap,segs,rratio,MIN.SNPs){
 
 
 
-`ComputeProjectedZ.fromS.R.partial`<-
-function(this.S,this.SST,this.imap,start.inds, end.inds,rratio,MIN.SNPs){
+
+`ComputeProjectedZ.fromS.R.partial`
+<-function(this.S,this.SST,this.imap,start.inds, end.inds,rratio,MIN.SNPs){
     T = nrow(this.S)
     N = ncol(this.S)
     dfnum <- 1;
@@ -416,7 +417,7 @@ function(this.S,this.SST,this.imap,start.inds, end.inds,rratio,MIN.SNPs){
           
           # 2010/02/21: need to change this part so that both left and the right segments have MIN.SNPs, not just the sum!!!
           # set.to.zero = which(nsnps<MIN.SNPs | ((totalsnps-nsnps)<MIN.SNPs))
-          nsnpsL = this.imap[st,] # number of snps to the left of the first change-point.
+          nsnpsL = this.imap[st,] - this.imap[1,]# number of snps to the left of the first change-point.
           nsnpsR = this.imap[T,] - this.imap[ed,]
           set.to.zero = which(nsnps<MIN.SNPs | nsnpsL<MIN.SNPs | nsnpsR<MIN.SNPs)
           
@@ -434,8 +435,9 @@ function(this.S,this.SST,this.imap,start.inds, end.inds,rratio,MIN.SNPs){
 
 
 
-`ComputeProjectedZ.fromS.R`<-
-function(this.S,this.SST,this.imap,win,rratio,MIN.SNPs){
+
+`ComputeProjectedZ.fromS.R`
+<-function(this.S,this.SST,this.imap,win,rratio,MIN.SNPs){
     T = nrow(this.S) # Number of SNPs.
     N = ncol(this.S) # Number of samples/platforms
 
@@ -466,8 +468,8 @@ function(this.S,this.SST,this.imap,win,rratio,MIN.SNPs){
 
                 # 2010/02/21: need to change this part so that both left and the right segments have MIN.SNPs, not just the sum!!!
                 # set.to.zero = which(nsnps<MIN.SNPs | ((totalsnps-nsnps)<MIN.SNPs))
-                nsnpsL = this.imap[1:(T-k),i] # number of snps to the left of the first change-point.
-                nsnpsR = totalsnps - this.imap[(k+1):T,i]
+                nsnpsL = this.imap[1:(T-k),i]-this.imap[1,i] # number of snps to the left of the first change-point.
+                nsnpsR = totalsnps - this.imap[(k+1):T,i]+this.imap[1,i]
                 set.to.zero = which(nsnps<MIN.SNPs | nsnpsL<MIN.SNPs | nsnpsR<MIN.SNPs)
                 U[set.to.zero,k] = 0
         }
@@ -478,6 +480,8 @@ function(this.S,this.SST,this.imap,win,rratio,MIN.SNPs){
     Z[which(is.na(Z), arr.ind=TRUE)]=0
     return(Z)
 }
+
+
 
 
 

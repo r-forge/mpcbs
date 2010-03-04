@@ -1,13 +1,14 @@
 Package: mpcbs
 ==============
+Version: 1.1.1 [2010-03-03]
+o BUG FIX: Henrik found that mpcbs sometimes missed major change-points.  This was due to a bug in the internal function ComputeProjectedZ.fromS.R.
 
 Version: 1.1.0 [2010-03-02]
 o BUG FIX: mpcbs.mbic() would give an error if data from only
   one platform was given.
-o BUG FIX: ...
+o BUG FIX: cross.platform.consensus did not work for only one platform.
 o BUG FIX: Argument 'MIN.SNPs' for mpcbs.mbic() was not working
-  correctly.  <Nancy explain what the problem was and how it 
-  works now>.
+  correctly.  
 
 
 Version: 1.0.0 [2009-05-23]
