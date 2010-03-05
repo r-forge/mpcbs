@@ -388,8 +388,8 @@ function(this.S, this.SST,this.imap,segs,rratio,MIN.SNPs){
 
 
 
-`ComputeProjectedZ.fromS.R.partial`
-<-function(this.S,this.SST,this.imap,start.inds, end.inds,rratio,MIN.SNPs){
+`ComputeProjectedZ.fromS.R.partial` <-
+function(this.S,this.SST,this.imap,start.inds, end.inds,rratio,MIN.SNPs){
     T = nrow(this.S)
     N = ncol(this.S)
     dfnum <- 1;
@@ -436,8 +436,8 @@ function(this.S, this.SST,this.imap,segs,rratio,MIN.SNPs){
 
 
 
-`ComputeProjectedZ.fromS.R`
-<-function(this.S,this.SST,this.imap,win,rratio,MIN.SNPs){
+`ComputeProjectedZ.fromS.R`<-
+function(this.S,this.SST,this.imap,win,rratio,MIN.SNPs){
     T = nrow(this.S) # Number of SNPs.
     N = ncol(this.S) # Number of samples/platforms
 
